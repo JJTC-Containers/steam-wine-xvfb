@@ -41,8 +41,8 @@ RUN mkdir /usr/share/ddler \
     # Install Wine + deps and Xvfb
     && apk add --no-cache wine gnutls xvfb xvfb-run \
     # Create steam group and user
-    && addgroup -S steam \
-    && adduser -D steam -G steam \
+    && addgroup -g 10001 -S steam \
+    && adduser -u 10000 -D steam -G steam \
     # Create wineprefix folder and set owner
     && mkdir /home/steam/wine \
     && chown steam /home/steam/wine
