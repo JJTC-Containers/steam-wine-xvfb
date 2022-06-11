@@ -39,7 +39,7 @@ RUN mkdir /usr/share/ddler \
     && echo "dotnet /usr/share/ddler/DepotDownloader.dll \"\$@\"" >> /usr/bin/ddler \
     && chmod +x /usr/bin/ddler \
     # Install Wine + deps and Xvfb
-    && apk add --no-cache wine gnutls xvfb xvfb-run \
+    && apk add --no-cache wine gnutls xvfb xvfb-run tzdata \
     # Create steam group and user
     && addgroup -g 10001 -S steam \
     && adduser -u 10000 -D steam -G steam \
