@@ -1,51 +1,43 @@
-#ARG IMG_VERSION=6.0-alpine
-#FROM mcr.microsoft.com/dotnet/runtime:$IMG_VERSION
-### START OF REMOVE WHEN NEW MS IMG IS OUT
-FROM alpine:3.16
+ARG IMG_VERSION=8.0-alpine
+FROM mcr.microsoft.com/dotnet/sdk:$IMG_VERSION AS builder
+
+ARG ddler_ver=2.7.1
+
+RUN cd /tmp && \
+    wget https://github.com/SteamRE/DepotDownloader/archive/refs/tags/DepotDownloader_$ddler_ver.tar.gz && \
+    tar -xzf DepotDownloader_$ddler_ver.tar.gz && \
+    rm DepotDownloader_$ddler_ver.tar.gz && \
+    mv DepotDownloader-DepotDownloader_$ddler_ver DepotDownloader && \
+    cd DepotDownloader && \
+    dotnet publish DepotDownloader/DepotDownloader.csproj \
+        --framework "net8.0" \
+        --no-self-contained \
+        -p:PublishSingleFile=true \
+        -p:DebugType=embedded \
+        --use-current-runtime \
+        --configuration Release \
+        --output publish
+
+
+FROM mcr.microsoft.com/dotnet/runtime:$IMG_VERSION
 
 LABEL maintainer="JJTC <oci@jjtc.eu>"
 
-RUN apk add --no-cache \
-        ca-certificates \
-        \
-        # .NET dependencies
-        icu-libs \
-        krb5-libs \
-        libgcc \
-        libintl \
-        libssl1.1 \
-        libstdc++ \
-        zlib
+RUN apk add --no-cache ca-certificates
 
-# Install .NET SDK
-RUN wget -O dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0.300/dotnet-sdk-6.0.300-linux-musl-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -C /usr/share/dotnet -oxzf dotnet.tar.gz \
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+COPY --from=builder /tmp/DepotDownloader/publish/DepotDownloader /usr/local/bin/depotdownloader
 
-### END OF REMOVE WHEN NEW MS IMG IS OUT
-
-ARG ddler_ver=2.7.1
 ENV WINEPREFIX=/home/steam/wine/ \
     WINEARCH=win64
 
-# Get and setup DepotDownloader
-RUN mkdir /usr/share/ddler \
-    && cd /usr/share/ddler \
-    && wget https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_$ddler_ver/depotdownloader-$ddler_ver.zip \
-    && unzip depotdownloader-$ddler_ver.zip \
-    && rm depotdownloader-$ddler_ver.zip \
-    && echo "#!/usr/bin/env sh" > /usr/bin/ddler \
-    && echo "dotnet /usr/share/ddler/DepotDownloader.dll \"\$@\"" >> /usr/bin/ddler \
-    && chmod +x /usr/bin/ddler \
-    # Install Wine + deps and Xvfb
-    && apk add --no-cache wine gnutls xvfb xvfb-run tzdata \
+# Install Wine + deps and Xvfb
+RUN apk add --no-cache wine gnutls xvfb xvfb-run tzdata && \
     # Create steam group and user
-    && addgroup -g 10001 -S steam \
-    && adduser -u 10000 -D steam -G steam \
+    addgroup -g 10001 -S steam && \
+    adduser -u 10000 -D steam -G steam && \
     # Create wineprefix folder and set owner
-    && mkdir /home/steam/wine \
-    && chown steam /home/steam/wine
+    mkdir /home/steam/wine && \
+    chown steam /home/steam/wine
 
 # Switch to steam user
 USER steam
@@ -56,6 +48,6 @@ ENTRYPOINT [ "echo", "Use https://steamdb.info/search/?a=app&q=server or https:/
 # Examples of installing an app:\n\
 \n\
 - Conan Exiles Dedicated Server for Windows\n\
-    ddler -app 443030 -os windows -dir conanexiles/ -validate" ]
+    depotdownloader -app 443030 -os windows -dir conanexiles/ -validate" ]
 
-CMD [ "ddler", "$@" ]
+CMD [ "depotdownloader", "$@" ]
