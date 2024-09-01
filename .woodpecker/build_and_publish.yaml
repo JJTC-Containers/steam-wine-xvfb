@@ -1,0 +1,17 @@
+steps:
+  build_and_publish:
+    image: plugins/docker
+    settings:
+      context: .
+      dockerfile: Containerfile
+      tags:
+        - latest
+        - ${CI_COMMIT_TAG}
+      repo: jjtc/steam-wine-xvfb
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+    when:
+      event: tag
+      branch: main
