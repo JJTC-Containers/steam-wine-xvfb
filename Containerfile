@@ -25,7 +25,7 @@ RUN wget -O dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0
 
 ### END OF REMOVE WHEN NEW MS IMG IS OUT
 
-ARG ddler_ver=2.4.6
+ARG ddler_ver=2.7.1
 ENV WINEPREFIX=/home/steam/wine/ \
     WINEARCH=win64
 
